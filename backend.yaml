@@ -64,7 +64,15 @@ spec:
             value: dev-outbound-banka1-to-banka2
           - name: PARTNER1_OUTBOUND_TOKEN
             value: dev-inbound-banka2-to-banka1
-            
+
+          # Particioniranje (transactions/interbank_messages/audit_logs) DISABLE.
+          # Hibernate ddl-auto=update kreira obicne tabele, pa PartitionMaintenanceService
+          # ne moze `CREATE TABLE ... PARTITION OF` na ne-partitioned parent
+          # (SQL grammar error, 12 WARN-ova u logu). Za production: napraviti DB-side
+          # migration koja kreira parent sa PARTITION BY RANGE pa enable.
+          - name: BANKA2_PARTITIONS_ENABLED
+            value: "false"
+
           # RabbitMQ — async broker za notifikacije
           - name: SPRING_RABBITMQ_HOST
             value: rabbitmq
