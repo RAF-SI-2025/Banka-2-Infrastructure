@@ -19,21 +19,21 @@ spec:
         env:
           # Primary DB (read-write) — write i DDL idu ovde
           - name: SPRING_DATASOURCE_URL
-            value: jdbc:postgresql://postgres-primary:5432/banka2
+            value: jdbc:postgresql://db-primary.banka-2.svc:5432/db
           - name: SPRING_DATASOURCE_USERNAME
-            value: banka2user
+            value: db
           - name: SPRING_DATASOURCE_PASSWORD
-            value: banka2dev
+            value: BD2Mo6H5Mys3eQu0MpCLUNOB
           - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
             value: org.postgresql.Driver
 
           # Read replica (RO) — @Transactional(readOnly=true) ide ovde preko RoutingDataSource
           - name: BANKA2_DATASOURCE_REPLICA_URL
-            value: jdbc:postgresql://postgres-replica:5432/banka2
+            value: jdbc:postgresql://db-replicas.banka-2.svc:5432/db
           - name: BANKA2_DATASOURCE_REPLICA_USERNAME
-            value: banka2user
+            value: db
           - name: BANKA2_DATASOURCE_REPLICA_PASSWORD
-            value: banka2dev
+            value: BD2Mo6H5Mys3eQu0MpCLUNOB
           - name: BANKA2_DATASOURCE_REPLICA_ENABLED
             value: "true"
 
@@ -64,16 +64,7 @@ spec:
             value: dev-outbound-banka1-to-banka2
           - name: PARTNER1_OUTBOUND_TOKEN
             value: dev-inbound-banka2-to-banka1
-
-          # Arbitro Phase 6 — Whisper STT sidecar (opcioni; ako Arbitro stack nije
-          # deployovan u banka-2 namespace, BE graceful-fallback sa "(audio)" placeholder)
-          - name: ARBITRO_WHISPER_URL
-            value: http://whisper-stt:8093
-          - name: ARBITRO_WHISPER_ENABLED
-            value: "true"
-          - name: ARBITRO_WHISPER_TIMEOUT_MS
-            value: "30000"
-
+            
           # RabbitMQ — async broker za notifikacije
           - name: SPRING_RABBITMQ_HOST
             value: rabbitmq
