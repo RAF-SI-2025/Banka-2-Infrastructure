@@ -1,0 +1,60 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: db
+  namespace: banka-2
+spec:
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi9-17.9-2610
+  postgresVersion: 17
+  instances:
+    - name: instance1
+      replicas: 3
+      dataVolumeClaimSpec:
+        accessModes:
+        - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: 30Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: banka-2
+                  postgres-operator.crunchydata.com/instance-set: instance1
+  backups:
+    pgbackrest:
+      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi9-2.58.0-2610
+      repos:
+      - name: repo1
+        volume:
+          volumeClaimSpec:
+            accessModes:
+            - "ReadWriteOnce"
+            resources:
+              requests:
+                storage: 30Gi
+  proxy:
+    pgBouncer:
+      replicas: 2
+      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbouncer:ubi9-1.25-2610
+      resources:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+  users:
+    - name: db
+      password:
+        type: "AlphaNumeric"
+      databases:
+        - db
+      options: "SUPERUSER"
+    - name: trading-db
+      password:
+        type: "AlphaNumeric"
+      databases:
+        - trading-db
+      options: "SUPERUSER"

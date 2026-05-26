@@ -1,0 +1,68 @@
+# StatefulSet (ne Deployment) jer InfluxDB drzi auth + TSM state u `/var/lib/influxdb2`
+# i treba stable network ID + persistent volume. Cak i 1 replika, StatefulSet je
+# idiomatic za databases — volumeClaimTemplates auto-kreira PVC po pod-u.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: influxdb
+  namespace: banka-2
+spec:
+  serviceName: influxdb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+      - name: influxdb
+        image: influxdb:2.7-alpine
+        ports:
+        - name: http
+          containerPort: 8086
+        env:
+        # Init mode `setup` se izvrsava SAMO ako je data dir prazan (prvi boot).
+        # Sledeci start-ovi auto-skipuju setup i ucitavaju postojeci `influxd.bolt`.
+        - name: DOCKER_INFLUXDB_INIT_MODE
+          value: setup
+        - name: DOCKER_INFLUXDB_INIT_USERNAME
+          value: admin
+        - name: DOCKER_INFLUXDB_INIT_PASSWORD
+          value: admin12345
+        - name: DOCKER_INFLUXDB_INIT_ORG
+          value: banka2
+        - name: DOCKER_INFLUXDB_INIT_BUCKET
+          value: tick-listings
+        - name: DOCKER_INFLUXDB_INIT_RETENTION
+          value: 90d
+        # Admin token mora biti min 32 bajta — koristi se za InfluxDB CLI + trading-service write API.
+        - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+          value: dev-token-change-me-32-bytes-minimum
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/influxdb2
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 30Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: banka-2
+spec:
+  selector:
+    app: influxdb
+  ports:
+  - name: http
+    port: 8086
+    targetPort: 8086

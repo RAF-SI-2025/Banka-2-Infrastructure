@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: banka-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - image: ghcr.io/raf-si-2025/banka-2-notification-service:latest
+        name: banka-2-notification-service
+        ports:
+        - name: http
+          containerPort: 8083
+        env:
+          # RabbitMQ — async broker (notification-service je konzumer)
+          - name: SPRING_RABBITMQ_HOST
+            value: rabbitmq
+          - name: SPRING_RABBITMQ_PORT
+            value: "5672"
+          - name: SPRING_RABBITMQ_USERNAME
+            value: guest
+          - name: SPRING_RABBITMQ_PASSWORD
+            value: guest
+
+          # Gmail SMTP (production zahteva Gmail app password)
+          - name: MAIL_USERNAME
+            value: banka2.notifications@gmail.com
+          - name: MAIL_PASSWORD
+            value: ""
+
+          # Deep-link URL base — FE domain za activation/password-reset email link-ove.
+          # Placeholder — Mudrinic ce dodeliti pravi FE domain.
+          - name: NOTIFICATION_ACTIVATION_URL_BASE
+            value: https://banka2.tim2.elab.rs
+          - name: NOTIFICATION_PASSWORD_RESET_URL_BASE
+            value: https://banka2.tim2.elab.rs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: banka-2
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - name: http
+    port: 8083
+    targetPort: 8083

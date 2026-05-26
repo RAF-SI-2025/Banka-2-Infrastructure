@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trading-service
+  namespace: banka-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trading-service
+  template:
+    metadata:
+      labels:
+        app: trading-service
+    spec:
+      containers:
+      - image: ghcr.io/raf-si-2025/banka-2-trading-service:latest
+        name: banka-2-trading-service
+        ports:
+        - name: http
+          containerPort: 8082
+        env:
+          # Trading DB — odvojen PG service `trading-db` u istom namespace-u.
+          - name: TRADING_DB_URL
+            value: jdbc:postgresql://trading-db.banka-2.svc:5432/db
+          - name: TRADING_DB_USER
+            value: db
+          - name: TRADING_DB_PASSWORD
+            value: BD2Mo6H5Mys3eQu0MpCLUNOB
+
+          # JWT secret — DEV placeholder, production zahteva 256-bit base64 random
+          - name: JWT_SECRET
+            value: dev-only-jwt-secret-do-not-use-in-prod-rotate-via-env-var-on-each-deploy
+
+          # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service
+          - name: INTERNAL_API_KEY
+            value: dev-internal-key-rotate-in-prod
+
+          # Banka-core upstream (internal /internal/portfolio/** poziv ka backend)
+          - name: BANKACORE_BASE_URL
+            value: http://backend:8080
+
+          # RabbitMQ — async broker (margin/OTC events publish)
+          - name: SPRING_RABBITMQ_HOST
+            value: rabbitmq
+          - name: SPRING_RABBITMQ_PORT
+            value: "5672"
+          - name: SPRING_RABBITMQ_USERNAME
+            value: guest
+          - name: SPRING_RABBITMQ_PASSWORD
+            value: guest
+
+          # InfluxDB — OHLCV time-series (W1-T6 enabled)
+          - name: BANKA2_INFLUX_URL
+            value: http://influxdb:8086
+          - name: BANKA2_INFLUX_TOKEN
+            value: dev-token-change-me-32-bytes-minimum
+          - name: BANKA2_INFLUX_ORG
+            value: banka2
+          - name: BANKA2_INFLUX_BUCKET
+            value: tick-listings
+          - name: BANKA2_INFLUX_ENABLED
+            value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trading-service
+  namespace: banka-2
+spec:
+  selector:
+    app: trading-service
+  ports:
+  - name: http
+    port: 8082
+    targetPort: 8082

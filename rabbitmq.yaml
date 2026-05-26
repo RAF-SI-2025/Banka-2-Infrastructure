@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: banka-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - image: rabbitmq:3.13-management-alpine
+        name: rabbitmq
+        ports:
+        - name: amqp
+          containerPort: 5672
+        - name: management
+          containerPort: 15672
+        env:
+        # Default user/pass — match-uje SPRING_RABBITMQ_USERNAME/PASSWORD u backend.yaml.
+        # RabbitMQ default `guest/guest` radi samo sa localhost-a; eksplicitan DEFAULT_USER
+        # otkljucava remote konekcije iz banka-core/trading-service/notification-service pod-ova.
+        - name: RABBITMQ_DEFAULT_USER
+          value: guest
+        - name: RABBITMQ_DEFAULT_PASS
+          value: guest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: banka-2
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management
+    port: 15672
+    targetPort: 15672
