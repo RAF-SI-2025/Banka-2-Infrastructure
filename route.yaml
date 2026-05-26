@@ -1,0 +1,210 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: banka-2
+  namespace: banka-2
+spec:
+  parentRefs:
+  - name: banka-gw
+    namespace: envoy-gateway-system
+  hostnames:
+  - banka-2.radenkovic.rs
+  rules:
+  # ─── Mudrinic alias format: /<service>/* ──────────────────────────────────
+  - matches:
+    - path: {type: PathPrefix, value: /trading-service}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: trading-service
+      port: 8082
+  - matches:
+    - path: {type: PathPrefix, value: /backend}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: backend
+      port: 8080
+  - matches:
+    - path: {type: PathPrefix, value: /notification-service}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: notification-service
+      port: 8083
+
+  # ─── /api/* prefix → path-based routing ka servisima ──────────────────────
+  # FE Axios saljete /api/orders/new, browser resolve na banka-2.radenkovic.rs/api/orders/new,
+  # ova pravila path-em odlucuju koji service prima. URLRewrite skida /api prefix
+  # pa backend dobija original path (/orders/new).
+
+  # Trading-service paths (15 prefix-a iz api-gateway/nginx.conf reference-a)
+  - matches:
+    - path: {type: PathPrefix, value: /api/orders}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /orders}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/portfolio}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /portfolio}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/tax}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /tax}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/funds}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /funds}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/actuaries}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /actuaries}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/listings}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /listings}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/exchanges}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /exchanges}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/options}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /options}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/margin-accounts}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /margin-accounts}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/otc}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /otc}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/profit-bank}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /profit-bank}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/price-alerts}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /price-alerts}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/watchlists}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /watchlists}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/recurring-orders}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /recurring-orders}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/dividends}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /dividends}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+  - matches:
+    - path: {type: PathPrefix, value: /api/admin/dividends}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /admin/dividends}
+    backendRefs:
+    - {name: trading-service, port: 8082}
+
+  # Notification-service paths
+  - matches:
+    - path: {type: PathPrefix, value: /api/notifications}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /notifications}
+    backendRefs:
+    - {name: notification-service, port: 8083}
+
+  # Catch-all za sve ostale /api/* path-eve → backend (banka-core: /auth, /clients,
+  # /employees, /accounts, /cards, /payments, /transfers, /loans, /savings, /audit,
+  # /assistant, /interbank, /companies, /currencies, /v3, /swagger-ui, /actuator, ...)
+  - matches:
+    - path: {type: PathPrefix, value: /api}
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path: {type: ReplacePrefixMatch, replacePrefixMatch: /}
+    backendRefs:
+    - {name: backend, port: 8080}
+
+  # ─── SPA catch-all ────────────────────────────────────────────────────────
+  - matches:
+    - path: {type: PathPrefix, value: /}
+    backendRefs:
+    - name: frontend
+      port: 80

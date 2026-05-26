@@ -63,8 +63,10 @@ spec:
           # Browser cita window._env_ pri load-u index.html-a pre main bundle-a —
           # promena ovih env vars + rollout restart = nova FE konfiguracija
           # bez ponovnog build-a image-a.
+          # /api relativan — browser resolve na same origin (banka-2.radenkovic.rs/api/*),
+          # Envoy Gateway HTTPRoute (route.yaml) path-em rute na backend/trading/notification.
           - name: API_URL
-            value: https://banka-2.radenkovic.rs
+            value: /api
           - name: OUR_BANK_CODE
             value: RN-222
           - name: ENV
