@@ -965,15 +965,41 @@ spec:
       containers:
       - name: psql-seed
         image: postgres:16-alpine
+        # PG env vars iz Crunchy Secret-a `db-pguser-db` — host/port/user/dbname/password
+        # auto-generisan od PG operator-a, NISTA hardkodirano u YAML-u.
         env:
+        - name: PGHOST
+          valueFrom:
+            secretKeyRef:
+              name: db-pguser-db
+              key: host
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: db-pguser-db
+              key: port
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: db-pguser-db
+              key: user
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: db-pguser-db
+              key: dbname
         - name: PGPASSWORD
-          value: BD2Mo6H5Mys3eQu0MpCLUNOB
+          valueFrom:
+            secretKeyRef:
+              name: db-pguser-db
+              key: password
         command:
           - sh
           - -c
           - |
-            echo "Pokrecem psql sa /seed/seed.sql..."
-            psql -h db-primary.banka-2.svc -U db -d db -v ON_ERROR_STOP=1 -f /seed/seed.sql
+            set -e
+            echo "Pokrecem psql sa /seed/seed.sql (host=$PGHOST db=$PGDATABASE user=$PGUSER)..."
+            psql -v ON_ERROR_STOP=1 -f /seed/seed.sql
             echo "Seed uspesno ubasen!"
         volumeMounts:
         - name: seed-sql

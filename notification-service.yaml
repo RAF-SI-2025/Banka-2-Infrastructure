@@ -39,9 +39,9 @@ spec:
           # Deep-link URL base — FE domain za activation/password-reset email link-ove.
           # Placeholder — Mudrinic ce dodeliti pravi FE domain.
           - name: NOTIFICATION_ACTIVATION_URL_BASE
-            value: https://banka2.tim2.elab.rs
+            value: https://banka-2.radenkovic.rs
           - name: NOTIFICATION_PASSWORD_RESET_URL_BASE
-            value: https://banka2.tim2.elab.rs
+            value: https://banka-2.radenkovic.rs
 ---
 apiVersion: v1
 kind: Service

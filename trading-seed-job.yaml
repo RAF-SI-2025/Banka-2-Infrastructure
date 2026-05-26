@@ -2166,6 +2166,7 @@ spec:
           - sh
           - -c
           - |
+            set -e
             echo "Pokrecem psql sa /seed/trading-seed.sql (host=$PGHOST db=$PGDATABASE user=$PGUSER)..."
             psql -v ON_ERROR_STOP=1 -f /seed/trading-seed.sql
             echo "Trading seed uspesno ubasen!"
