@@ -44,23 +44,38 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
         env:
-          # Primary DB (read-write) — write i DDL idu ovde
+          # Primary DB (read-write) — write i DDL idu ovde.
+          # USERNAME + PASSWORD iz Crunchy Secret-a `db-pguser-db` (auto-generated od
+          # PG operatora). URL host (db-primary) nije sensitive, ostaje plain.
           - name: SPRING_DATASOURCE_URL
             value: jdbc:postgresql://db-primary.banka-2.svc:5432/db
           - name: SPRING_DATASOURCE_USERNAME
-            value: db
+            valueFrom:
+              secretKeyRef:
+                name: db-pguser-db
+                key: user
           - name: SPRING_DATASOURCE_PASSWORD
-            value: BD2Mo6H5Mys3eQu0MpCLUNOB
+            valueFrom:
+              secretKeyRef:
+                name: db-pguser-db
+                key: password
           - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
             value: org.postgresql.Driver
 
-          # Read replica (RO) — @Transactional(readOnly=true) ide ovde preko RoutingDataSource
+          # Read replica (RO) — @Transactional(readOnly=true) ide ovde preko RoutingDataSource.
+          # Replica deli isti user/password sa primary (Crunchy streaming replikacija).
           - name: BANKA2_DATASOURCE_REPLICA_URL
             value: jdbc:postgresql://db-replicas.banka-2.svc:5432/db
           - name: BANKA2_DATASOURCE_REPLICA_USERNAME
-            value: db
+            valueFrom:
+              secretKeyRef:
+                name: db-pguser-db
+                key: user
           - name: BANKA2_DATASOURCE_REPLICA_PASSWORD
-            value: BD2Mo6H5Mys3eQu0MpCLUNOB
+            valueFrom:
+              secretKeyRef:
+                name: db-pguser-db
+                key: password
           - name: BANKA2_DATASOURCE_REPLICA_ENABLED
             value: "true"
 
