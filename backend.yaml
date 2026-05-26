@@ -16,6 +16,33 @@ spec:
       containers:
       - image: ghcr.io/raf-si-2025/banka-2-backend:latest
         name: banka-2-backend
+        ports:
+        - name: http
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          # Spring Boot boot 30-90s sa Hibernate ddl-auto=update + 38 JPA repos.
+          # 30 × 10s = 300s grace pre liveness/readiness pocinju da fail-uju.
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
         env:
           # Primary DB (read-write) — write i DDL idu ovde
           - name: SPRING_DATASOURCE_URL
@@ -90,3 +117,16 @@ spec:
           # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service
           - name: INTERNAL_API_KEY
             value: dev-internal-key-rotate-in-prod
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: banka-2
+spec:
+  selector:
+    app: backend
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
