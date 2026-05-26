@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: banka-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - image: ghcr.io/raf-si-2025/banka-2-backend:latest
+        name: banka-2-backend
+        env:
+          - name: banka-2-env
+            value: banka-2-value
