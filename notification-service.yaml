@@ -15,10 +15,20 @@ spec:
     spec:
       containers:
       - image: ghcr.io/raf-si-2025/banka-2-notification-service:latest
+        imagePullPolicy: Always
         name: banka-2-notification-service
         ports:
         - name: http
           containerPort: 8083
+        resources:
+          # Notification-service: lightweight RabbitMQ consumer + SMTP sender.
+          # Nema DB, nema heavy compute — samo email format + SMTP poziv.
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
         env:
           # RabbitMQ — async broker (notification-service je konzumer)
           - name: SPRING_RABBITMQ_HOST

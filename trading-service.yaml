@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
       - image: ghcr.io/raf-si-2025/banka-2-trading-service:latest
+        imagePullPolicy: Always
         name: banka-2-trading-service
         ports:
         - name: http
@@ -41,6 +42,16 @@ spec:
             port: 8082
           failureThreshold: 30
           periodSeconds: 10
+        resources:
+          # Trading-service: orderi/portfolio/OTC/fondovi/opcije + InfluxDB klijent.
+          # Manji od banka-core jer ima manje JPA repos-a, ali order scheduler
+          # i price recorder rade kontinuirano.
+          requests:
+            cpu: 500m
+            memory: 768Mi
+          limits:
+            cpu: 2000m
+            memory: 1536Mi
         env:
           # Trading DB — DRUGA logicka DB unutar istog Crunchy cluster-a 'db'.
           # PostgresCluster ima 2 user-a: 'db' (vlasnik baze 'db') i

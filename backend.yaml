@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
       - image: ghcr.io/raf-si-2025/banka-2-backend:latest
+        imagePullPolicy: Always
         name: banka-2-backend
         ports:
         - name: http
@@ -43,6 +44,15 @@ spec:
             port: 8080
           failureThreshold: 30
           periodSeconds: 10
+        resources:
+          # Banka-core monolit: 38 JPA repos + svi domeni (auth/banking/inter-bank).
+          # Boot zahteva ~1Gi RAM, runtime ~1.5Gi pod opterecenjem.
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
         env:
           # Primary DB (read-write) — write i DDL idu ovde.
           # USERNAME + PASSWORD iz Crunchy Secret-a `db-pguser-db` (auto-generated od

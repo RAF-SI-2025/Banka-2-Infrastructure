@@ -1,4 +1,4 @@
-# ConfigMap sa inline trading-seed.sql (116KB / 2090 linija, ispod 1MB ConfigMap limit).
+# ConfigMap sa inline trading-seed.sql (regen 26.05 — sadrzi dtype fix za margin_accounts).
 # Job mountuje kao volume na /seed/trading-seed.sql i pokrece psql ka trading-db logickoj
 # bazi unutar Crunchy cluster-a. PG kredencijali iz Secret-a db-pguser-trading-db
 # (auto-generisan od Crunchy operatora).
@@ -1576,24 +1576,24 @@ data:
     -- account_id: 1=Stefan RSD, 4=Milica RSD, 7=Lazar RSD, 10=Ana Youth RSD
 
     -- Margin accounts: only insert if user doesn't already have one
-    INSERT INTO margin_accounts (bank_participation, created_at, initial_margin, loan_value,
+    INSERT INTO margin_accounts (dtype, bank_participation, created_at, initial_margin, loan_value,
                                         maintenance_margin, status, user_id, account_id)
-    SELECT 0.4000, NOW(), 50000.0000, 20000.0000, 25000.0000, 'ACTIVE', 1, 1
+    SELECT 'USER', 0.4000, NOW(), 50000.0000, 20000.0000, 25000.0000, 'ACTIVE', 1, 1
     WHERE NOT EXISTS (SELECT 1 FROM margin_accounts WHERE user_id = 1);
 
-    INSERT INTO margin_accounts (bank_participation, created_at, initial_margin, loan_value,
+    INSERT INTO margin_accounts (dtype, bank_participation, created_at, initial_margin, loan_value,
                                         maintenance_margin, status, user_id, account_id)
-    SELECT 0.5000, NOW(), 25000.0000, 12500.0000, 12500.0000, 'BLOCKED', 2, 4
+    SELECT 'USER', 0.5000, NOW(), 25000.0000, 12500.0000, 12500.0000, 'BLOCKED', 2, 4
     WHERE NOT EXISTS (SELECT 1 FROM margin_accounts WHERE user_id = 2);
 
-    INSERT INTO margin_accounts (bank_participation, created_at, initial_margin, loan_value,
+    INSERT INTO margin_accounts (dtype, bank_participation, created_at, initial_margin, loan_value,
                                         maintenance_margin, status, user_id, account_id)
-    SELECT 0.3000, NOW(), 40000.0000, 12000.0000, 20000.0000, 'ACTIVE', 3, 7
+    SELECT 'USER', 0.3000, NOW(), 40000.0000, 12000.0000, 20000.0000, 'ACTIVE', 3, 7
     WHERE NOT EXISTS (SELECT 1 FROM margin_accounts WHERE user_id = 3);
 
-    INSERT INTO margin_accounts (bank_participation, created_at, initial_margin, loan_value,
+    INSERT INTO margin_accounts (dtype, bank_participation, created_at, initial_margin, loan_value,
                                         maintenance_margin, status, user_id, account_id)
-    SELECT 0.4500, NOW(), 30000.0000, 13500.0000, 15000.0000, 'ACTIVE', 4, 10
+    SELECT 'USER', 0.4500, NOW(), 30000.0000, 13500.0000, 15000.0000, 'ACTIVE', 4, 10
     WHERE NOT EXISTS (SELECT 1 FROM margin_accounts WHERE user_id = 4);
 
     -- Margin transactions: only insert if account has no transactions yet
@@ -2116,9 +2116,6 @@ spec:
     spec:
       restartPolicy: Never
       initContainers:
-      # Ceka da trading-service zavrsi Hibernate ddl-auto=update.
-      # Plain  loop. PG kredencijali nisu potrebni
-      # u init container-u — samo proverava HTTP readiness probe.
       - name: wait-for-trading-service
         image: curlimages/curl:8.10.1
         command:
@@ -2134,41 +2131,28 @@ spec:
       containers:
       - name: psql-trading-seed
         image: postgres:16-alpine
-        # PG env vars (PGHOST/PORT/USER/DATABASE/PASSWORD) iz Crunchy Secret-a —
-        # password se NE hardkodira u YAML, auto-generisan od operatora.
         env:
         - name: PGHOST
           valueFrom:
-            secretKeyRef:
-              name: db-pguser-trading-db
-              key: host
+            secretKeyRef: {name: db-pguser-trading-db, key: host}
         - name: PGPORT
           valueFrom:
-            secretKeyRef:
-              name: db-pguser-trading-db
-              key: port
+            secretKeyRef: {name: db-pguser-trading-db, key: port}
         - name: PGUSER
           valueFrom:
-            secretKeyRef:
-              name: db-pguser-trading-db
-              key: user
+            secretKeyRef: {name: db-pguser-trading-db, key: user}
         - name: PGDATABASE
           valueFrom:
-            secretKeyRef:
-              name: db-pguser-trading-db
-              key: dbname
+            secretKeyRef: {name: db-pguser-trading-db, key: dbname}
         - name: PGPASSWORD
           valueFrom:
-            secretKeyRef:
-              name: db-pguser-trading-db
-              key: password
+            secretKeyRef: {name: db-pguser-trading-db, key: password}
         command:
           - sh
           - -c
           - |
             set -e
             echo "Provera da li je trading seed vec ubacen (idempotency check)..."
-            # Ako listings tabela vec ima redove, preskoci seed.
             LISTING_COUNT=$(psql -tA -c 'SELECT COUNT(*) FROM listings' 2>/dev/null || echo "ERR")
             if [ "$LISTING_COUNT" != "0" ] && [ "$LISTING_COUNT" != "ERR" ]; then
               echo "listings tabela vec ima $LISTING_COUNT redova — trading seed vec ubacen, SKIP."

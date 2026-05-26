@@ -91,12 +91,11 @@ spec:
     - type: URLRewrite
       urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /dividends}}
     backendRefs: [{name: trading-service, port: 8082}]
-  # Notification path (1)
-  - matches: [{path: {type: PathPrefix, value: /api/notifications}}]
-    filters:
-    - type: URLRewrite
-      urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /notifications}}
-    backendRefs: [{name: notification-service, port: 8083}]
+  # NAPOMENA: /api/notifications NE ide na notification-service! Notification-service
+  # je RabbitMQ consumer + Gmail SMTP sender — NEMA HTTP REST endpoint-e. Endpoint-i
+  # /notifications/unread-count, /notifications?page=, /notifications/{id}/read zive
+  # u banka-core (NotificationController). Catch-all /api → backend (HTTPRoute
+  # banka-2-core) ih automatski preuzima.
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

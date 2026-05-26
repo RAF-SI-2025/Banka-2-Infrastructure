@@ -53,6 +53,7 @@ spec:
     spec:
       containers:
       - image: ghcr.io/raf-si-2025/banka-2-frontend:latest
+        imagePullPolicy: Always
         name: banka-2-frontend
         ports:
         - name: http
