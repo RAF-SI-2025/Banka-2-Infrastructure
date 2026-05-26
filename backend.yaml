@@ -17,5 +17,77 @@ spec:
       - image: ghcr.io/raf-si-2025/banka-2-backend:latest
         name: banka-2-backend
         env:
-          - name: banka-2-env
-            value: banka-2-value
+          # Primary DB (read-write) — write i DDL idu ovde
+          - name: SPRING_DATASOURCE_URL
+            value: jdbc:postgresql://postgres-primary:5432/banka2
+          - name: SPRING_DATASOURCE_USERNAME
+            value: banka2user
+          - name: SPRING_DATASOURCE_PASSWORD
+            value: banka2dev
+          - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+            value: org.postgresql.Driver
+
+          # Read replica (RO) — @Transactional(readOnly=true) ide ovde preko RoutingDataSource
+          - name: BANKA2_DATASOURCE_REPLICA_URL
+            value: jdbc:postgresql://postgres-replica:5432/banka2
+          - name: BANKA2_DATASOURCE_REPLICA_USERNAME
+            value: banka2user
+          - name: BANKA2_DATASOURCE_REPLICA_PASSWORD
+            value: banka2dev
+          - name: BANKA2_DATASOURCE_REPLICA_ENABLED
+            value: "true"
+
+          # JPA / Hibernate
+          - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+            value: update
+          - name: SPRING_JPA_SHOW_SQL
+            value: "false"
+          - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+            value: org.hibernate.dialect.PostgreSQLDialect
+          - name: SPRING_JPA_PROPERTIES_HIBERNATE_TYPE_PREFERRED_BOOLEAN_JDBC_TYPE
+            value: INTEGER
+
+          # Rate limit (Bucket4j) — production 10 req/min/IP, demo capacity podigauto
+          - name: AUTH_RATE_LIMIT_ENABLED
+            value: "true"
+          - name: AUTH_RATE_LIMIT_CAPACITY
+            value: "100000"
+
+          # Inter-bank (Tim 1) — X-Api-Key auth, Tim 1 routing 111
+          - name: PARTNER1_BASE_URL
+            value: http://tim1-banka.example.com
+          - name: PARTNER1_USER_PATH
+            value: /interbank/user/{rn}/{id}
+          - name: PARTNER1_ROUTING
+            value: "111"
+          - name: PARTNER1_INBOUND_TOKEN
+            value: dev-outbound-banka1-to-banka2
+          - name: PARTNER1_OUTBOUND_TOKEN
+            value: dev-inbound-banka2-to-banka1
+
+          # Arbitro Phase 6 — Whisper STT sidecar (opcioni; ako Arbitro stack nije
+          # deployovan u banka-2 namespace, BE graceful-fallback sa "(audio)" placeholder)
+          - name: ARBITRO_WHISPER_URL
+            value: http://whisper-stt:8093
+          - name: ARBITRO_WHISPER_ENABLED
+            value: "true"
+          - name: ARBITRO_WHISPER_TIMEOUT_MS
+            value: "30000"
+
+          # RabbitMQ — async broker za notifikacije
+          - name: SPRING_RABBITMQ_HOST
+            value: rabbitmq
+          - name: SPRING_RABBITMQ_PORT
+            value: "5672"
+          - name: SPRING_RABBITMQ_USERNAME
+            value: guest
+          - name: SPRING_RABBITMQ_PASSWORD
+            value: guest
+
+          # Trading-service (cross-microservice /internal/portfolio/** poziv)
+          - name: TRADINGSERVICE_BASE_URL
+            value: http://trading-service:8082
+
+          # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service
+          - name: INTERNAL_API_KEY
+            value: dev-internal-key-rotate-in-prod
