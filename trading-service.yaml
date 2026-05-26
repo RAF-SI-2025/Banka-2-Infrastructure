@@ -19,14 +19,46 @@ spec:
         ports:
         - name: http
           containerPort: 8082
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8082
+          failureThreshold: 30
+          periodSeconds: 10
         env:
-          # Trading DB — odvojen PG service `trading-db` u istom namespace-u.
+          # Trading DB — DRUGA logicka DB unutar istog Crunchy cluster-a 'db'.
+          # PostgresCluster ima 2 user-a: 'db' (vlasnik baze 'db') i
+          # 'trading-db' (vlasnik baze 'trading-db'). Crunchy operator auto-
+          # generise password i izlazi sve u Secret 'db-pguser-trading-db'.
+          # Host = 'db-primary.banka-2.svc' (write endpoint Crunchy primary instance).
           - name: TRADING_DB_URL
-            value: jdbc:postgresql://trading-db.banka-2.svc:5432/db
+            value: jdbc:postgresql://db-primary.banka-2.svc:5432/trading-db
           - name: TRADING_DB_USER
-            value: db
+            valueFrom:
+              secretKeyRef:
+                name: db-pguser-trading-db
+                key: user
           - name: TRADING_DB_PASSWORD
-            value: BD2Mo6H5Mys3eQu0MpCLUNOB
+            valueFrom:
+              secretKeyRef:
+                name: db-pguser-trading-db
+                key: password
 
           # JWT secret — DEV placeholder, production zahteva 256-bit base64 random
           - name: JWT_SECRET
