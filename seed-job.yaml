@@ -939,14 +939,14 @@ metadata:
   name: banka-core-seed
   namespace: banka-2
 spec:
-  backoffLimit: 3
-  ttlSecondsAfterFinished: 600
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 1800
   template:
     metadata:
       labels:
         app: banka-core-seed
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       initContainers:
       # Ceka da backend zavrsi Hibernate ddl-auto=update — psql na seed.sql
       # mora doci POSLE kreiranja tabela, inace INSERT-i pucaju na missing table.
@@ -998,7 +998,15 @@ spec:
           - -c
           - |
             set -e
-            echo "Pokrecem psql sa /seed/seed.sql (host=$PGHOST db=$PGDATABASE user=$PGUSER)..."
+            echo "Provera da li je seed vec ubacen (idempotency check)..."
+            # Ako users tabela vec ima redove, preskoci seed (one-time bootstrap pattern).
+            # 0 = fresh DB → ubaci seed. >0 = vec seedovano → exit 0 (Job Complete).
+            USER_COUNT=$(psql -tA -c 'SELECT COUNT(*) FROM users' 2>/dev/null || echo "ERR")
+            if [ "$USER_COUNT" != "0" ] && [ "$USER_COUNT" != "ERR" ]; then
+              echo "users tabela vec ima $USER_COUNT redova — seed vec ubacen, SKIP."
+              exit 0
+            fi
+            echo "Fresh DB — pokrecem psql sa /seed/seed.sql (host=$PGHOST db=$PGDATABASE user=$PGUSER)..."
             psql -v ON_ERROR_STOP=1 -f /seed/seed.sql
             echo "Seed uspesno ubasen!"
         volumeMounts:

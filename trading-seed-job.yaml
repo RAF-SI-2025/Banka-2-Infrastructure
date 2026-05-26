@@ -2107,14 +2107,14 @@ metadata:
   name: trading-service-seed
   namespace: banka-2
 spec:
-  backoffLimit: 3
-  ttlSecondsAfterFinished: 600
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 1800
   template:
     metadata:
       labels:
         app: trading-service-seed
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       initContainers:
       # Ceka da trading-service zavrsi Hibernate ddl-auto=update.
       # Plain  loop. PG kredencijali nisu potrebni
@@ -2167,7 +2167,14 @@ spec:
           - -c
           - |
             set -e
-            echo "Pokrecem psql sa /seed/trading-seed.sql (host=$PGHOST db=$PGDATABASE user=$PGUSER)..."
+            echo "Provera da li je trading seed vec ubacen (idempotency check)..."
+            # Ako listings tabela vec ima redove, preskoci seed.
+            LISTING_COUNT=$(psql -tA -c 'SELECT COUNT(*) FROM listings' 2>/dev/null || echo "ERR")
+            if [ "$LISTING_COUNT" != "0" ] && [ "$LISTING_COUNT" != "ERR" ]; then
+              echo "listings tabela vec ima $LISTING_COUNT redova — trading seed vec ubacen, SKIP."
+              exit 0
+            fi
+            echo "Fresh trading-db — pokrecem psql sa /seed/trading-seed.sql (host=$PGHOST db=$PGDATABASE user=$PGUSER)..."
             psql -v ON_ERROR_STOP=1 -f /seed/trading-seed.sql
             echo "Trading seed uspesno ubasen!"
         volumeMounts:
