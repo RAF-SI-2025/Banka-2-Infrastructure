@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: banka-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: ghcr.io/raf-si-2025/banka-2-frontend:latest
+        name: banka-2-frontend
+        ports:
+        - name: http
+          containerPort: 80
+        env:
+          # Runtime config (envsubst u docker-entrypoint.sh generise
+          # /usr/share/nginx/html/config.js iz public/config.template.js).
+          # Browser cita window._env_ pri load-u index.html-a pre main bundle-a —
+          # promena ovih env vars + rollout restart = nova FE konfiguracija
+          # bez ponovnog build-a image-a.
+          - name: API_URL
+            value: /api
+          - name: OUR_BANK_CODE
+            value: RN-222
+          - name: ENV
+            value: production
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: banka-2
+spec:
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
