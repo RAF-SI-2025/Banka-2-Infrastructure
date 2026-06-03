@@ -36,15 +36,33 @@ spec:
           - name: SPRING_RABBITMQ_PORT
             value: "5672"
           - name: SPRING_RABBITMQ_USERNAME
-            value: guest
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: RABBITMQ_DEFAULT_USER
           - name: SPRING_RABBITMQ_PASSWORD
-            value: guest
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: RABBITMQ_DEFAULT_PASS
 
-          # Gmail SMTP (production zahteva Gmail app password)
+          # Gmail SMTP — username + app password iz Secret-a `mail-credentials`.
+          # MAIL_PASSWORD ne sme biti prazan (inace SMTP tiho fail-uje).
           - name: MAIL_USERNAME
-            value: banka2.notifications@gmail.com
+            valueFrom:
+              secretKeyRef:
+                name: mail-credentials
+                key: MAIL_USERNAME
           - name: MAIL_PASSWORD
-            value: ""
+            valueFrom:
+              secretKeyRef:
+                name: mail-credentials
+                key: MAIL_PASSWORD
+          # P2-config-2 (R3 1596): prod fail-fast — ako je MAIL_PASSWORD prazan
+          # (Secret pogresno popunjen), app PUKNE pri startu umesto da tiho DLQ-uje
+          # svaku notifikaciju (MailAuthenticationException busy-retry → DLQ).
+          - name: NOTIFICATION_MAIL_FAIL_FAST
+            value: "true"
 
           # Deep-link URL base — FE domain za activation/password-reset email link-ove.
           # Placeholder — Mudrinic ce dodeliti pravi FE domain.

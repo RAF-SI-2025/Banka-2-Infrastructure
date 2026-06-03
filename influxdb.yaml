@@ -28,19 +28,31 @@ spec:
         # Sledeci start-ovi auto-skipuju setup i ucitavaju postojeci `influxd.bolt`.
         - name: DOCKER_INFLUXDB_INIT_MODE
           value: setup
+        # Admin username/password iz Secret-a `influxdb-credentials`.
         - name: DOCKER_INFLUXDB_INIT_USERNAME
-          value: admin
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-credentials
+              key: INFLUX_ADMIN_USERNAME
         - name: DOCKER_INFLUXDB_INIT_PASSWORD
-          value: admin12345
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-credentials
+              key: INFLUX_ADMIN_PASSWORD
         - name: DOCKER_INFLUXDB_INIT_ORG
           value: banka2
         - name: DOCKER_INFLUXDB_INIT_BUCKET
           value: tick-listings
         - name: DOCKER_INFLUXDB_INIT_RETENTION
           value: 90d
-        # Admin token mora biti min 32 bajta — koristi se za InfluxDB CLI + trading-service write API.
+        # Admin token mora biti min 32 bajta — koristi se za InfluxDB CLI +
+        # trading-service write API. Iz Secret-a `influxdb-credentials`
+        # (ista vrednost kao BANKA2_INFLUX_TOKEN u trading-service.yaml).
         - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
-          value: dev-token-change-me-32-bytes-minimum
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-credentials
+              key: INFLUX_ADMIN_TOKEN
         volumeMounts:
         - name: data
           mountPath: /var/lib/influxdb2

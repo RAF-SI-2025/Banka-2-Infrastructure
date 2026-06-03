@@ -105,17 +105,31 @@ spec:
           - name: AUTH_RATE_LIMIT_CAPACITY
             value: "100000"
 
-          # Inter-bank (Tim 1) — X-Api-Key auth, Tim 1 routing 111
+          # Inter-bank (Banka 1 / Tim 1) — X-Api-Key auth, routing 111.
+          # PARTNER1_BASE_URL = javni URL gateway-a Banke 1 na NJIHOVOM klasteru.
+          # Nas klijent dodaje /interbank, /public-stock, /negotiations, /user na kraj,
+          # pa ovo treba da bude baza do koje + ti path-evi stignu do njihovog inbound-a.
+          # POPUNITI kad Banka 1 da svoj k8s URL (npr. https://banka-1.<domen>/ ili .../api/
+          # zavisno od toga da li njihov ingress koristi /api prefiks). Vidi
+          # Banka-1-Integracija/INTEGRACIJA-UPUTSTVO.md §2.
           - name: PARTNER1_BASE_URL
-            value: http://tim1-banka.example.com
+            value: https://REPLACE-WITH-BANKA1-K8S-URL/
           - name: PARTNER1_USER_PATH
             value: /interbank/user/{rn}/{id}
           - name: PARTNER1_ROUTING
             value: "111"
+          # Inter-bank handshake tokeni — iz Secret-a `app-secrets`
+          # (dogovoreni bilateralno sa Tim 1).
           - name: PARTNER1_INBOUND_TOKEN
-            value: dev-outbound-banka1-to-banka2
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: PARTNER1_INBOUND_TOKEN
           - name: PARTNER1_OUTBOUND_TOKEN
-            value: dev-inbound-banka2-to-banka1
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: PARTNER1_OUTBOUND_TOKEN
 
           # Particioniranje (transactions/interbank_messages/audit_logs) DISABLE.
           # Hibernate ddl-auto=update kreira obicne tabele, pa PartitionMaintenanceService
@@ -131,17 +145,39 @@ spec:
           - name: SPRING_RABBITMQ_PORT
             value: "5672"
           - name: SPRING_RABBITMQ_USERNAME
-            value: guest
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: RABBITMQ_DEFAULT_USER
           - name: SPRING_RABBITMQ_PASSWORD
-            value: guest
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: RABBITMQ_DEFAULT_PASS
 
           # Trading-service (cross-microservice /internal/portfolio/** poziv)
           - name: TRADINGSERVICE_BASE_URL
             value: http://trading-service:8082
 
-          # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service
+          # JWT secret — iz Secret-a `app-secrets` (HS256, 256-bit base64).
+          # R3 1564 config-drift fix: banka-core sad FAIL-FAST-uje bez JWT_SECRET
+          # (nema vise dev-default-a), pa OVAJ env MORA biti setovan. Mora biti
+          # IDENTICAN onome u trading-service.yaml — tokeni koje izda banka-core
+          # verifikuju se na trading-service-u. Pre fix-a backend.yaml ga uopste
+          # nije setovao → banka-core crash na startu ILI token mismatch.
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: JWT_SECRET
+
+          # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service.
+          # Iz Secret-a `app-secrets` (mora biti identican u trading-service.yaml).
           - name: INTERNAL_API_KEY
-            value: dev-internal-key-rotate-in-prod
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: INTERNAL_API_KEY
 ---
 apiVersion: v1
 kind: Service

@@ -45,16 +45,19 @@ spec:
         limits:
           cpu: 200m
           memory: 128Mi
+  # App user-i: NE SUPERUSER (least privilege). Crunchy kreira LOGIN role koji
+  # je VLASNIK svoje navedene baze (`databases:`), pa ima pun CREATE/DDL na njoj
+  # — dovoljno za Hibernate ddl-auto=update i seed. SUPERUSER je over-privileged
+  # (zaobilazi sve RLS/grant provere, moze citati/menjati druge baze i sistemske
+  # kataloge) i predstavlja security rizik na app nalogu.
   users:
     - name: db
       password:
         type: "AlphaNumeric"
       databases:
         - db
-      options: "SUPERUSER"
     - name: trading-db
       password:
         type: "AlphaNumeric"
       databases:
         - trading-db
-      options: "SUPERUSER"

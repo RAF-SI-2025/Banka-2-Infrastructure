@@ -1,0 +1,6 @@
+# Realni Secret manifest sa popunjenim vrednostima — NIKAD ne commitovati.
+# Commituje se samo template `secrets.yaml.example`.
+secrets.yaml
+
+# IDE
+.idea/
