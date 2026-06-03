@@ -22,13 +22,20 @@ spec:
         - name: management
           containerPort: 15672
         env:
-        # Default user/pass — match-uje SPRING_RABBITMQ_USERNAME/PASSWORD u backend.yaml.
-        # RabbitMQ default `guest/guest` radi samo sa localhost-a; eksplicitan DEFAULT_USER
-        # otkljucava remote konekcije iz banka-core/trading-service/notification-service pod-ova.
+        # Dedicated user/pass iz Secret-a `rabbitmq-credentials` — match-uje
+        # SPRING_RABBITMQ_USERNAME/PASSWORD u backend/trading/notification.
+        # Zamenjen default `guest/guest` (remote-enabled = security rizik);
+        # eksplicitan DEFAULT_USER otkljucava remote konekcije iz svih pod-ova.
         - name: RABBITMQ_DEFAULT_USER
-          value: guest
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: RABBITMQ_DEFAULT_USER
         - name: RABBITMQ_DEFAULT_PASS
-          value: guest
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: RABBITMQ_DEFAULT_PASS
 ---
 apiVersion: v1
 kind: Service

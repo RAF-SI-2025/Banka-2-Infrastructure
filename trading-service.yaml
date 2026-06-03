@@ -71,13 +71,21 @@ spec:
                 name: db-pguser-trading-db
                 key: password
 
-          # JWT secret — DEV placeholder, production zahteva 256-bit base64 random
+          # JWT secret — iz Secret-a `app-secrets` (HS256, 256-bit base64).
+          # Vrednost se popunjava pri deploy-u (vidi secrets.yaml.example).
           - name: JWT_SECRET
-            value: dev-only-jwt-secret-do-not-use-in-prod-rotate-via-env-var-on-each-deploy
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: JWT_SECRET
 
-          # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service
+          # Inter-service auth (X-Internal-Key) — banka-core ↔ trading-service.
+          # Iz Secret-a `app-secrets` (mora biti identican u backend.yaml).
           - name: INTERNAL_API_KEY
-            value: dev-internal-key-rotate-in-prod
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: INTERNAL_API_KEY
 
           # Banka-core upstream (internal /internal/portfolio/** poziv ka backend)
           - name: BANKACORE_BASE_URL
@@ -89,15 +97,25 @@ spec:
           - name: SPRING_RABBITMQ_PORT
             value: "5672"
           - name: SPRING_RABBITMQ_USERNAME
-            value: guest
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: RABBITMQ_DEFAULT_USER
           - name: SPRING_RABBITMQ_PASSWORD
-            value: guest
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: RABBITMQ_DEFAULT_PASS
 
-          # InfluxDB — OHLCV time-series (W1-T6 enabled)
+          # InfluxDB — OHLCV time-series (W1-T6 enabled).
+          # Write token iz Secret-a `influxdb-credentials` (match InfluxDB init token).
           - name: BANKA2_INFLUX_URL
             value: http://influxdb:8086
           - name: BANKA2_INFLUX_TOKEN
-            value: dev-token-change-me-32-bytes-minimum
+            valueFrom:
+              secretKeyRef:
+                name: influxdb-credentials
+                key: INFLUX_ADMIN_TOKEN
           - name: BANKA2_INFLUX_ORG
             value: banka2
           - name: BANKA2_INFLUX_BUCKET
