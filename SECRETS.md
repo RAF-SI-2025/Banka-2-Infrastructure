@@ -18,6 +18,8 @@ Deployment-i ih sada citaju preko `valueFrom.secretKeyRef`.
 | `INTERNAL_API_KEY` | `trading-service.yaml` + `backend.yaml` `value: dev-internal-...` | `app-secrets` / `INTERNAL_API_KEY` | backend.yaml, trading-service.yaml |
 | `PARTNER1_INBOUND_TOKEN` | `backend.yaml` `value: dev-outbound-...` | `app-secrets` / `PARTNER1_INBOUND_TOKEN` | backend.yaml |
 | `PARTNER1_OUTBOUND_TOKEN` | `backend.yaml` `value: dev-inbound-...` | `app-secrets` / `PARTNER1_OUTBOUND_TOKEN` | backend.yaml |
+| `PARTNER2_INBOUND_TOKEN` | (novo — EXBanka 2, routing 265) | `app-secrets` / `PARTNER2_INBOUND_TOKEN` | backend.yaml |
+| `PARTNER2_OUTBOUND_TOKEN` | (novo — EXBanka 2, routing 265) | `app-secrets` / `PARTNER2_OUTBOUND_TOKEN` | backend.yaml |
 | InfluxDB admin user | `influxdb.yaml` `value: admin` | `influxdb-credentials` / `INFLUX_ADMIN_USERNAME` | influxdb.yaml |
 | InfluxDB admin pass | `influxdb.yaml` `value: admin12345` | `influxdb-credentials` / `INFLUX_ADMIN_PASSWORD` | influxdb.yaml |
 | InfluxDB admin token | `influxdb.yaml` + `trading-service.yaml` `value: dev-token-change-me-...` | `influxdb-credentials` / `INFLUX_ADMIN_TOKEN` | influxdb.yaml, trading-service.yaml |
@@ -55,7 +57,11 @@ kubectl create secret generic app-secrets \
   --from-literal=INTERNAL_API_KEY="$(openssl rand -hex 32)" \
   --from-literal=PARTNER1_INBOUND_TOKEN="<dogovoreno sa Tim 1>" \
   --from-literal=PARTNER1_OUTBOUND_TOKEN="<dogovoreno sa Tim 1>" \
+  --from-literal=PARTNER2_INBOUND_TOKEN="9d5b05c52c655104cc95db612a0279a92c9f11b7893a777082c02f4675ec8106" \
+  --from-literal=PARTNER2_OUTBOUND_TOKEN="e8250154d6e14df9325494606a07b55d3d7c01807ece82396b4d7ba3366acc0c" \
   -n banka-2
+# PARTNER2_INBOUND_TOKEN  = NAS kljuc (izdajemo ga EXBanka 2; oni ga salju kad zovu nas)
+# PARTNER2_OUTBOUND_TOKEN = NJIHOV kljuc (mi ga saljemo kad zovemo njih)
 
 # influxdb-credentials  (token MORA biti min 32 bajta)
 kubectl create secret generic influxdb-credentials \

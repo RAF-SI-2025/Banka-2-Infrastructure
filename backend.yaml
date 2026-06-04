@@ -131,6 +131,31 @@ spec:
                 name: app-secrets
                 key: PARTNER1_OUTBOUND_TOKEN
 
+          # Inter-bank (EXBanka 2) — X-Api-Key auth, routing 265.
+          # Njihov inbound je na BARE putanjama (bez /api): https://exbanka-2.radenkovic.rs/interbank,
+          # /public-stock, /negotiations, /user/... — zato PARTNER2_BASE_URL NEMA /api sufiks.
+          # (Asimetrija: nas inbound je pod /api, njihov je bare — vidi EXBanka-2-INTEGRACIJA.md §3.)
+          - name: PARTNER2_BASE_URL
+            value: https://exbanka-2.radenkovic.rs
+          - name: PARTNER2_USER_PATH
+            value: /user/{rn}/{id}
+          - name: PARTNER2_ROUTING
+            value: "265"
+          - name: PARTNER2_NAME
+            value: "EXBanka 2"
+          # Inter-bank handshake token — deljeni X-Api-Key iz Secret-a `app-secrets`
+          # (dogovoren bilateralno sa EXBanka 2; ista vrednost u oba smera).
+          - name: PARTNER2_INBOUND_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: PARTNER2_INBOUND_TOKEN
+          - name: PARTNER2_OUTBOUND_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: PARTNER2_OUTBOUND_TOKEN
+
           # Particioniranje (transactions/interbank_messages/audit_logs) DISABLE.
           # Hibernate ddl-auto=update kreira obicne tabele, pa PartitionMaintenanceService
           # ne moze `CREATE TABLE ... PARTITION OF` na ne-partitioned parent
