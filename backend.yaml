@@ -106,14 +106,13 @@ spec:
             value: "100000"
 
           # Inter-bank (Banka 1 / Tim 1) — X-Api-Key auth, routing 111.
-          # PARTNER1_BASE_URL = javni URL gateway-a Banke 1 na NJIHOVOM klasteru.
-          # Nas klijent dodaje /interbank, /public-stock, /negotiations, /user na kraj,
-          # pa ovo treba da bude baza do koje + ti path-evi stignu do njihovog inbound-a.
-          # POPUNITI kad Banka 1 da svoj k8s URL (npr. https://banka-1.<domen>/ ili .../api/
-          # zavisno od toga da li njihov ingress koristi /api prefiks). Vidi
-          # Banka-1-Integracija/INTEGRACIJA-UPUTSTVO.md §2.
+          # PARTNER1_BASE_URL = javni URL Banke 1 na NJIHOVOM klasteru. Njihov inbound je
+          # na BARE putanjama (BEZ /api): https://banka-1.radenkovic.rs/interbank,
+          # /public-stock, /negotiations, /user/{rn}/{id}. Nas InterbankClient dodaje te
+          # sufikse na kraj (normalizeBaseUrl skida trailing slash), pa ovde NEMA /api.
+          # (Asimetrija: nas inbound je pod /api, njihov je bare — kao i EXBanka 2.)
           - name: PARTNER1_BASE_URL
-            value: https://REPLACE-WITH-BANKA1-K8S-URL/
+            value: https://banka-1.radenkovic.rs
           - name: PARTNER1_USER_PATH
             value: /interbank/user/{rn}/{id}
           - name: PARTNER1_ROUTING

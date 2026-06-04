@@ -55,8 +55,8 @@ env var se ne resolve-uje). Dva nacina:
 kubectl create secret generic app-secrets \
   --from-literal=JWT_SECRET="$(openssl rand -base64 64)" \
   --from-literal=INTERNAL_API_KEY="$(openssl rand -hex 32)" \
-  --from-literal=PARTNER1_INBOUND_TOKEN="<dogovoreno sa Tim 1>" \
-  --from-literal=PARTNER1_OUTBOUND_TOKEN="<dogovoreno sa Tim 1>" \
+  --from-literal=PARTNER1_INBOUND_TOKEN="65f28a2bff9b02aee724e284eaf1e87fd05fc42124e70879b5d718add87ec77d" \
+  --from-literal=PARTNER1_OUTBOUND_TOKEN="0a12840537dc295ae617f3376f7f2af0a67c18577a893ae43d6022bee06db601" \
   --from-literal=PARTNER2_INBOUND_TOKEN="9d5b05c52c655104cc95db612a0279a92c9f11b7893a777082c02f4675ec8106" \
   --from-literal=PARTNER2_OUTBOUND_TOKEN="e8250154d6e14df9325494606a07b55d3d7c01807ece82396b4d7ba3366acc0c" \
   -n banka-2
