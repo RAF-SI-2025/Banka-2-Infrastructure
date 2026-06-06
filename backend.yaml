@@ -202,6 +202,17 @@ spec:
               secretKeyRef:
                 name: app-secrets
                 key: INTERNAL_API_KEY
+
+          # OTP "u aplikaciji" (mobilni-kao-autentifikator). Izlaze aktivni TOTP
+          # kod preko GET /payments/my-otp da bi Android app mogao da ga prikaze
+          # ("Aktivan kod" u verifikacionom modalu pri placanju). Default je
+          # false (prod-safe) jer endpoint plaintext-uje 2FA kod svakom
+          # autentifikovanom korisniku; ovde je SVESNO ukljuceno jer mobilni nema
+          # eksterni authenticator/QR provisioning flow, pa kod mora da stigne u
+          # app. Bez ovoga endpoint vraca 404 i kod ne stigne na mobilni.
+          # Reverzibilno (vrednost "false" vraca prod-safe ponasanje).
+          - name: PAYMENTS_EXPOSE_ACTIVE_OTP
+            value: "true"
 ---
 apiVersion: v1
 kind: Service
