@@ -938,6 +938,27 @@ data:
 
     SELECT setval('game_scores_id_seq', (SELECT COALESCE(MAX(id), 1) FROM game_scores));
 
+    -- ============================================================
+    -- Inter-bank status CHECK constraints — normalizacija na pun enum skup
+    -- ============================================================
+    -- ddl-auto=update NE menja postojeci enum CHECK kad se doda nova vrednost, pa
+    -- stari deploy-i ostaju sa krnjim skupom: interbank_otc_contracts bez
+    -- EXERCISING/DECLINED (exercise ACTIVE->EXERCISING pada -> DataIntegrityViolation
+    -- -> generic 409 "konflikt sa postojecim podacima"), interbank_messages bez
+    -- DEAD_LETTER (retry terminalizacija pada). Idempotentni DROP+ADD normalizuje na
+    -- pun skup (radi i na fresh deploy-u — Hibernate vec napravi ispravan check).
+    DO $$
+    BEGIN
+        IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.relname='interbank_otc_contracts' AND n.nspname='public') THEN
+            ALTER TABLE interbank_otc_contracts DROP CONSTRAINT IF EXISTS interbank_otc_contracts_status_check;
+            ALTER TABLE interbank_otc_contracts ADD CONSTRAINT interbank_otc_contracts_status_check CHECK (status IN ('ACTIVE','EXERCISING','EXERCISED','EXPIRED','DECLINED'));
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.relname='interbank_messages' AND n.nspname='public') THEN
+            ALTER TABLE interbank_messages DROP CONSTRAINT IF EXISTS interbank_messages_status_check;
+            ALTER TABLE interbank_messages ADD CONSTRAINT interbank_messages_status_check CHECK (status IN ('PENDING','SENT','SENT_WAITING_ASYNC','STUCK','FAILED_PERMANENT','DEAD_LETTER','INBOUND'));
+        END IF;
+    END $$;
+
 ---
 apiVersion: batch/v1
 kind: Job
