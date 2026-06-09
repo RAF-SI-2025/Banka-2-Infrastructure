@@ -144,6 +144,20 @@ spec:
       urlRewrite: {path: {type: ReplacePrefixMatch, replacePrefixMatch: /}}
     backendRefs: [{name: backend, port: 8080}]
 
+  # Inter-bank protokol (profesorov §2/§3) — partner banke (Banka 1, ExBanka 2)
+  # zovu BARE putanje na domenu (BEZ /api prefiksa): POST /interbank (2PC),
+  # GET /public-stock, /negotiations/**, GET /user/{rn}/{id}. X-Api-Key validira
+  # InterbankAuthFilter u banka-core. BEZ rewrite-a — backend sluzi iste putanje.
+  # Bez ovih pravila bare putanje padaju na SPA catch-all → partner dobija HTML!
+  - matches: [{path: {type: PathPrefix, value: /interbank}}]
+    backendRefs: [{name: backend, port: 8080}]
+  - matches: [{path: {type: PathPrefix, value: /public-stock}}]
+    backendRefs: [{name: backend, port: 8080}]
+  - matches: [{path: {type: PathPrefix, value: /negotiations}}]
+    backendRefs: [{name: backend, port: 8080}]
+  - matches: [{path: {type: PathPrefix, value: /user}}]
+    backendRefs: [{name: backend, port: 8080}]
+
   # SPA catch-all — sve sto nije API path (HTML/CSS/JS/assets + React Router rute)
   - matches: [{path: {type: PathPrefix, value: /}}]
     backendRefs: [{name: frontend, port: 80}]
