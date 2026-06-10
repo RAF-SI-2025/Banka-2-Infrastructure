@@ -20,6 +20,8 @@ Deployment-i ih sada citaju preko `valueFrom.secretKeyRef`.
 | `PARTNER1_OUTBOUND_TOKEN` | `backend.yaml` `value: dev-inbound-...` | `app-secrets` / `PARTNER1_OUTBOUND_TOKEN` | backend.yaml |
 | `PARTNER2_INBOUND_TOKEN` | (novo — EXBanka 2, routing 265) | `app-secrets` / `PARTNER2_INBOUND_TOKEN` | backend.yaml |
 | `PARTNER2_OUTBOUND_TOKEN` | (novo — EXBanka 2, routing 265) | `app-secrets` / `PARTNER2_OUTBOUND_TOKEN` | backend.yaml |
+| `PARTNER3_INBOUND_TOKEN` | (novo — Banka 3, routing 333) | `app-secrets` / `PARTNER3_INBOUND_TOKEN` | backend.yaml |
+| `PARTNER3_OUTBOUND_TOKEN` | (novo — Banka 3, routing 333) | `app-secrets` / `PARTNER3_OUTBOUND_TOKEN` | backend.yaml |
 | InfluxDB admin user | `influxdb.yaml` `value: admin` | `influxdb-credentials` / `INFLUX_ADMIN_USERNAME` | influxdb.yaml |
 | InfluxDB admin pass | `influxdb.yaml` `value: admin12345` | `influxdb-credentials` / `INFLUX_ADMIN_PASSWORD` | influxdb.yaml |
 | InfluxDB admin token | `influxdb.yaml` + `trading-service.yaml` `value: dev-token-change-me-...` | `influxdb-credentials` / `INFLUX_ADMIN_TOKEN` | influxdb.yaml, trading-service.yaml |
@@ -55,13 +57,33 @@ env var se ne resolve-uje). Dva nacina:
 kubectl create secret generic app-secrets \
   --from-literal=JWT_SECRET="$(openssl rand -base64 64)" \
   --from-literal=INTERNAL_API_KEY="$(openssl rand -hex 32)" \
-  --from-literal=PARTNER1_INBOUND_TOKEN="65f28a2bff9b02aee724e284eaf1e87fd05fc42124e70879b5d718add87ec77d" \
-  --from-literal=PARTNER1_OUTBOUND_TOKEN="0a12840537dc295ae617f3376f7f2af0a67c18577a893ae43d6022bee06db601" \
-  --from-literal=PARTNER2_INBOUND_TOKEN="9d5b05c52c655104cc95db612a0279a92c9f11b7893a777082c02f4675ec8106" \
-  --from-literal=PARTNER2_OUTBOUND_TOKEN="e8250154d6e14df9325494606a07b55d3d7c01807ece82396b4d7ba3366acc0c" \
+  --from-literal=PARTNER1_INBOUND_TOKEN="<PARTNER1_INBOUND_iz_sigurnog_kanala>" \
+  --from-literal=PARTNER1_OUTBOUND_TOKEN="<PARTNER1_OUTBOUND_iz_sigurnog_kanala>" \
+  --from-literal=PARTNER2_INBOUND_TOKEN="<PARTNER2_INBOUND_iz_sigurnog_kanala>" \
+  --from-literal=PARTNER2_OUTBOUND_TOKEN="<PARTNER2_OUTBOUND_iz_sigurnog_kanala>" \
+  --from-literal=PARTNER3_INBOUND_TOKEN="<PARTNER3_INBOUND_iz_sigurnog_kanala>" \
+  --from-literal=PARTNER3_OUTBOUND_TOKEN="<PARTNER3_OUTBOUND_iz_sigurnog_kanala>" \
   -n banka-2
+# NAPOMENA (sec): prave token vrednosti se NE commituju — redaktovane su na
+# placeholdere. Stari literali (PARTNER1/2) su u git istoriji -> kandidati za
+# rotaciju + scrub (vidi §3). Drzi aktuelne vrednosti u lokalnom .env / sigurnom kanalu.
 # PARTNER2_INBOUND_TOKEN  = NAS kljuc (izdajemo ga EXBanka 2; oni ga salju kad zovu nas)
 # PARTNER2_OUTBOUND_TOKEN = NJIHOV kljuc (mi ga saljemo kad zovemo njih)
+# PARTNER3_INBOUND_TOKEN  = NAS kljuc za Banku 3 (izdajemo ga; oni ga salju kad zovu nas).
+#   MORA biti SVEZE GENERISAN (openssl rand -hex 32) i JEDINSTVEN — prvobitno poslat
+#   token Banci 3 bio je IDENTICAN PARTNER2_INBOUND_TOKEN-u (EXBanka 2) -> kolizija:
+#   findByApiKey radi findFirst pa bi Banka 3 bila pogresno mapirana na routing 265,
+#   a onda inbound odbacen sa 400 (idempotenceKey.routingNumber 333 != 265).
+#   Prava vrednost se NE commituje — drzi je u lokalnom .env / sigurnom kanalu.
+# PARTNER3_OUTBOUND_TOKEN = NJIHOV kljuc (Banka 3 nam ga dala; mi ga saljemo kad zovemo njih).
+#   Base64 sa +/= -> drzati pod navodnicima u shell/yaml.
+
+# ROTACIJA postojeceg app-secrets (vec deploy-ovan) — dodaj samo PARTNER3 kljuceve
+# bez ponovnog kreiranja celog secreta, pa restart backend-a (zameni placeholdere
+# pravim vrednostima iz sigurnog kanala; NE commituj popunjenu verziju):
+#   kubectl patch secret app-secrets -n banka-2 --type merge -p \
+#     '{"stringData":{"PARTNER3_INBOUND_TOKEN":"<PARTNER3_INBOUND>","PARTNER3_OUTBOUND_TOKEN":"<PARTNER3_OUTBOUND>"}}'
+#   kubectl rollout restart deployment/backend -n banka-2
 
 # influxdb-credentials  (token MORA biti min 32 bajta)
 kubectl create secret generic influxdb-credentials \
